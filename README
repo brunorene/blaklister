@@ -1,0 +1,3 @@
+Small library to ignore writing to certain fields on a class based on configuration
+
+It uses the delegated properties feature from kotlin
