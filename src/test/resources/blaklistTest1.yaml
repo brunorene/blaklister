@@ -1,0 +1,3 @@
+- className: pt.br.lib.blaklister.TestableEntity
+  propertyNames:
+    - isNew
