@@ -1,3 +1,6 @@
 Small library to ignore writing to certain fields on a class based on configuration
 
+If you have a data model shared between several projects you can choose which fields are relevant to each project and
+ignore all the rest, saving overall memory for you applications
+
 It uses the delegated properties feature from kotlin
