@@ -3,9 +3,7 @@ package pt.br.lib.blaklister.repository
 import java.util.UUID
 import kotlin.reflect.KProperty
 
-abstract class UUIDEntity(override val id: UUID = UUID.randomUUID()) : DataEntity<UUID>
-
-open class MapDataRepository<V, D: UUIDEntity>(private val map: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf())
+abstract class MapDataRepository<V, D: UUIDEntity>(private val map: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf())
     : DataRepository<UUID, V, D> {
 
     override fun setValue(entity: D, property: KProperty<*>, value: V) {
@@ -17,8 +15,8 @@ open class MapDataRepository<V, D: UUIDEntity>(private val map: MutableMap<UUID,
         map[entity.id]?.get(property.name) as? V
 }
 
-class StringMapDataRepository<D: UUIDEntity>(private val map: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf())
+class StringMapDataRepository<D: UUIDEntity>(map: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf())
     : MapDataRepository<String?, D>(map)
 
-class BooleanMapDataRepository<D: UUIDEntity>(private val map: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf())
+class BooleanMapDataRepository<D: UUIDEntity>(map: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf())
     : MapDataRepository<Boolean?, D>(map)
