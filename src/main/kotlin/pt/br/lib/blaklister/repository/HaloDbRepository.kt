@@ -3,9 +3,7 @@ package pt.br.lib.blaklister.repository
 import com.oath.halodb.HaloDB
 import com.oath.halodb.HaloDBOptions
 import pt.br.lib.blaklister.helper.joinAsByteArray
-import pt.br.lib.blaklister.helper.toByteArray
 import java.io.File
-import java.util.UUID
 import kotlin.reflect.KProperty
 
 class HaloDatabase(directory: File = File("./halodb")) {
@@ -91,41 +89,52 @@ class HaloDatabase(directory: File = File("./halodb")) {
     }
 }
 
-abstract class HaloDbRepository<V, D : UUIDEntity>(private val db: HaloDB) : DataRepository<UUID, V, D> {
+private val CHARSET = Charsets.UTF_8
 
-    abstract fun encodeValue(value: V): ByteArray?
+abstract class HaloDbRepository<K, V, D : DataEntity<K>>(
+    private val haloDb: HaloDatabase,
+    private val serializer: (K) -> ByteArray
+) : DataRepository<K, V, D> {
 
-    abstract fun decodeValue(value: ByteArray): V
+    abstract fun encodeValue(value: V?): ByteArray?
+
+    abstract fun decodeValue(value: ByteArray?): V?
 
     private fun encodeKey(entity: D, property: KProperty<*>) =
-        listOf(entity.javaClass.simpleName.toByteArray(),
-            entity.id.toByteArray(),
-            property.name.toByteArray()).joinAsByteArray()
+        listOf(entity.javaClass.simpleName.toByteArray(CHARSET),
+            serializer(entity.id),
+            property.name.toByteArray(CHARSET)).joinAsByteArray()
 
-    override fun setValue(entity: D, property: KProperty<*>, value: V) {
-        encodeValue(value)?.let { db.put(encodeKey(entity, property), it) }
+    override fun setValue(entity: D, property: KProperty<*>, value: V?) {
+        if (!entity.ignore(entity::class, property.name))
+            encodeValue(value)?.let { haloDb.access.put(encodeKey(entity, property), it) }
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun getValue(entity: D, property: KProperty<*>): V? =
-        decodeValue(db[encodeKey(entity, property)])
+    override fun getValue(entity: D, property: KProperty<*>): V? = decodeValue(haloDb.access[encodeKey(entity, property)])
 }
 
-class StringHaloDbDataRepository<D : UUIDEntity>(db: HaloDB)
-    : HaloDbRepository<String?, D>(db) {
-    override fun encodeValue(value: String?) = value?.toByteArray()
+class StringHaloDbDataRepository<K, D : DataEntity<K>>(
+    haloDb: HaloDatabase = HaloDatabase(),
+    serializer: (K) -> ByteArray
+) : HaloDbRepository<K, String?, D>(haloDb, serializer) {
+    override fun encodeValue(value: String?) = value?.toByteArray(CHARSET)
 
-    override fun decodeValue(value: ByteArray) = value.contentToString()
+    override fun decodeValue(value: ByteArray?) = value?.let { String(it, CHARSET) }
 }
 
-class BooleanHaloDbDataRepository<D : UUIDEntity>(db: HaloDB)
-    : HaloDbRepository<Boolean?, D>(db) {
-    override fun encodeValue(value: Boolean?): ByteArray {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+class BooleanHaloDbDataRepository<K, D : DataEntity<K>>(
+    haloDb: HaloDatabase = HaloDatabase(),
+    serializer: (K) -> ByteArray
+) : HaloDbRepository<K, Boolean?, D>(haloDb, serializer) {
+    override fun encodeValue(value: Boolean?): ByteArray? =
+        when (value) {
+            true -> ByteArray(1) { 1 }
+            false -> ByteArray(1) { 0 }
+            else -> null
 
-    override fun decodeValue(value: ByteArray): Boolean? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+        }
+
+    override fun decodeValue(value: ByteArray?): Boolean? = value?.let { it[0] == 1.toByte() }
 }
 

@@ -5,26 +5,36 @@ package pt.br.lib.blaklister
 
 import org.amshove.kluent.`should be`
 import org.amshove.kluent.`should equal`
-import pt.br.lib.blaklister.config.BlacklistConfig
-import pt.br.lib.blaklister.delegate.IgnorableProperty
-import pt.br.lib.blaklister.repository.BooleanMapDataRepository
-import pt.br.lib.blaklister.repository.StringMapDataRepository
-import pt.br.lib.blaklister.repository.UUIDEntity
+import pt.br.lib.blaklister.repository.DataEntity
+import pt.br.lib.blaklister.repository.MapDataRepository
+import java.io.File
 import java.util.UUID
 import kotlin.test.Test
 
 val map: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf()
 
-class TestableEntity(override val blacklist: BlacklistConfig) : UUIDEntity() {
-    var name: String? by IgnorableProperty(StringMapDataRepository(map))
-    var isNew: Boolean? by IgnorableProperty(BooleanMapDataRepository(map))
+class TestableEntity(
+    override val id: UUID
+) : DataEntity<UUID> {
+    var name: String? by MapDataRepository(map)
+    var isNew: Boolean? by MapDataRepository(map)
 }
 
 class PropertyTest {
 
     @Test
     fun testDelegatedProps1() {
-        val entity = TestableEntity(BlacklistConfig({}.javaClass.getResourceAsStream("/blaklistTest1.yaml")))
+        val blacklistFile = File("blacklist.yml")
+        blacklistFile.delete()
+        blacklistFile.bufferedWriter().use { writer ->
+            writer.write("""
+                blacklist:
+                    properties:
+                    - className: pt.br.lib.blaklister.TestableEntity
+                      names: isNew
+            """.trimIndent())
+        }
+        val entity = TestableEntity(UUID.randomUUID())
         entity.name = "Test 1"
         entity.isNew = true
         entity.name `should equal` "Test 1"
@@ -33,7 +43,18 @@ class PropertyTest {
 
     @Test
     fun testDelegatedProps2() {
-        val entity = TestableEntity(BlacklistConfig({}.javaClass.getResourceAsStream("/blaklistTest2.yaml")))
+        val blacklistFile = File("blacklist.yml")
+        blacklistFile.delete()
+        blacklistFile.bufferedWriter().use { writer ->
+            writer.write("""
+                blacklist:
+                    properties:
+                    - className: pt.br.lib.blaklister.TestableEntity
+                      names: name
+            """.trimIndent())
+        }
+        val entity = TestableEntity(UUID.randomUUID())
+        entity.refreshConfig()
         entity.name = "Test 1"
         entity.isNew = true
         entity.name `should equal` null

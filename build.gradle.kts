@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     `maven-publish`
     `build-scan`
@@ -13,10 +15,9 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.yaml:snakeyaml:1.24")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.+")
     implementation("com.oath.halodb:halodb:0.5.3")
+    implementation("com.uchuhimo:konf-yaml:0.20.0")
+    implementation("com.uchuhimo:konf-core:0.20.0")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
@@ -36,3 +37,14 @@ publishing {
         }
     }
 }
+
+tasks {
+    withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "1.8"
+        kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=enable")
+    }
+    withType<Delete> {
+        delete("out")
+    }
+}
+

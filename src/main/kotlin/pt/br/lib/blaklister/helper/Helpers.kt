@@ -1,6 +1,7 @@
 package pt.br.lib.blaklister.helper
 
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 import java.util.UUID
 
 fun UUID.toByteArray(): ByteArray {
